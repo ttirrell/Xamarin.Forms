@@ -21,7 +21,8 @@ namespace Xamarin.Forms.Platform.iOS
 		readonly IShellContext _shellContext;
 		UIView _blurView;
 		UIView _containerArea;
-		int _currentIndex;
+		ShellContent _currentContent;
+		int _currentIndex = 0;
 		IShellSectionRootHeader _header;
 		bool _isAnimating;
 		Dictionary<ShellContent, IVisualElementRenderer> _renderers = new Dictionary<ShellContent, IVisualElementRenderer>();
@@ -29,6 +30,7 @@ namespace Xamarin.Forms.Platform.iOS
 		bool _didLayoutSubviews;
 		int _lastTabThickness = Int32.MinValue;
 		Thickness _lastInset;
+		bool _isDisposed;
 
 		ShellSection ShellSection { get; set; }
 		IShellSectionController ShellSectionController => ShellSection;
@@ -93,7 +95,9 @@ namespace Xamarin.Forms.Platform.iOS
 
 		protected override void Dispose(bool disposing)
 		{
-			base.Dispose(disposing);
+			if (_isDisposed)
+				return;
+
 
 			if (disposing && ShellSection != null)
 			{
@@ -118,9 +122,13 @@ namespace Xamarin.Forms.Platform.iOS
 				}
 			}
 
+			base.Dispose(disposing);
+
 			ShellSection = null;
 			_header = null;
 			_tracker = null;
+			_currentContent = null;
+			_isDisposed = true;
 		}
 
 		protected virtual void LayoutRenderers()
@@ -154,6 +162,7 @@ namespace Xamarin.Forms.Platform.iOS
 				if (item == currentItem)
 				{
 					_containerArea.AddSubview(renderer.NativeView);
+					_currentContent = currentItem;
 					_currentIndex = i;
 				}
 
@@ -165,8 +174,10 @@ namespace Xamarin.Forms.Platform.iOS
 		{
 			if (e.PropertyName == ShellSection.CurrentItemProperty.PropertyName)
 			{
-				var currentItem = ShellSection.CurrentItem;
-				if (currentItem == null)
+				var newContent = ShellSection.CurrentItem;
+				var oldContent = _currentContent;
+
+				if (newContent == null)
 					return;
 
 				var items = ShellSectionController.GetItems();
@@ -174,15 +185,21 @@ namespace Xamarin.Forms.Platform.iOS
 					return;
 
 				var oldIndex = _currentIndex;
-				var oldItem = items[oldIndex];
+				var newIndex = items.IndexOf(newContent);
+				var oldRenderer = _renderers[oldContent];
 
-				_currentIndex = items.IndexOf(currentItem);
+				// this means the currently visible item has been removed
+				if(oldIndex == -1 && _currentIndex <= newIndex)
+				{
+					newIndex++;
+				}
 
-				var oldRenderer = _renderers[oldItem];
-				var currentRenderer = _renderers[currentItem];
+				_currentContent = newContent;
+				_currentIndex = newIndex;
+				var currentRenderer = _renderers[newContent];
 
 				// -1 == slide left, 1 ==  slide right
-				int motionDirection = _currentIndex > oldIndex ? -1 : 1;
+				int motionDirection = newIndex > oldIndex ? -1 : 1;
 
 				_containerArea.AddSubview(currentRenderer.NativeView);
 
@@ -200,8 +217,14 @@ namespace Xamarin.Forms.Platform.iOS
 				{
 					oldRenderer.NativeView.RemoveFromSuperview();
 					_isAnimating = false;
+					_tracker.Page = ((IShellContentController)newContent).Page;
 
-					_tracker.Page = ((IShellContentController)currentItem).Page;
+					if(!ShellSectionController.GetItems().Contains(oldContent))
+					{
+						_renderers.Remove(oldContent);
+						oldRenderer.ViewController.RemoveFromParentViewController();
+						oldRenderer.Dispose();
+					}
 				});
 			}
 		}
@@ -245,18 +268,6 @@ namespace Xamarin.Forms.Platform.iOS
 		{
 			// Make sure we do this after the header has a chance to react
 			Device.BeginInvokeOnMainThread(UpdateHeaderVisibility);
-
-			if (e.OldItems != null)
-			{
-				foreach (ShellContent oldItem in e.OldItems)
-				{
-					var oldRenderer = _renderers[oldItem];
-					_renderers.Remove(oldItem);
-					oldRenderer.NativeView.RemoveFromSuperview();
-					oldRenderer.ViewController.RemoveFromParentViewController();
-					oldRenderer.Dispose();
-				}
-			}
 
 			if (e.NewItems != null)
 			{
