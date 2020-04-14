@@ -1,23 +1,8 @@
 parameters:
-  name: ''            # in the form type_platform_host
-  displayName: ''     # the human name
-  vmImage: ''         # the VM image
-  vmPool: ''         # the VM pool
-  targetFolder: ''    # the bootstrapper target
-  dependsOn: []       # the dependiencies
-  preBuildSteps: []   # any steps to run before the build
-  postBuildSteps: []  # any additional steps to run after the build
-  slnPath : 'Xamarin.Forms.sln'
-  csprojPath : 'Xamarin.Forms.Platform.UAP\Xamarin.Forms.Platform.UAP.csproj'
-  msbuildExtraArguments : ''
-  artifactsTargetFolder: '$(build.artifactstagingdirectory)'
-  artifactsName: 'win_build'
-  nunitTestAdapterFolder: 'packages/NUnitTestAdapter.AnyVersion/build/'
-  nunitTestFolder: '$(build.sourcesdirectory)'
-  includeUwp: 'true'
-  includeAndroid: 'true'
-  includeNonUwpAndNonAndroid: 'true'
-  
+- name: version
+  type: string
+  default: ""
+
 variables:
 - name: Hosted
   value: 'true'
