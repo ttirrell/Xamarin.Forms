@@ -60,6 +60,6 @@ schedules:
     - master
 
 extends:
-  template: build-windows-file.yml
+  template: build/steps/build-windows-file.yml
   parameters:
     hosted: 'true'
