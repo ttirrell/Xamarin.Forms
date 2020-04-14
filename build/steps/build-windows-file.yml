@@ -21,7 +21,7 @@ parameters:
 jobs:
   - job: ${{ parameters.name }}
     variables:
-      Hosted: 'true'
+      Hosted: ${{ parameters.hosted }}
     workspace:
       clean: all
     displayName: ${{ parameters.displayName }}
@@ -29,7 +29,7 @@ jobs:
     pool:
       name: ${{ parameters.vmPool }}
       vmImage: ${{ parameters.vmImage }}
-       ${{ if eq(parameters.hosted, 'true') }}:
+       ${{ if eq(variables['System.TeamProject'], 'devdiv') }}:
         demands: 
           - Agent.OS -equals Windows_NT
     dependsOn: ${{ parameters.dependsOn }}
