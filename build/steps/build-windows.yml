@@ -1,11 +1,8 @@
 parameters:
-- name: version
-  type: string
-  default: ""
+  version: ""
 
 variables:
-- name: Hosted
-  value: 'true'
+  favoriteVeggie: 'brussels sprouts'
 
 jobs:
   - job: ${{ parameters.name }}
