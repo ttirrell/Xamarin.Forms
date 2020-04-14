@@ -1,3 +1,7 @@
+variables:
+- name: Hosted
+  value: 'true'
+
 parameters:
   name: ''            # in the form type_platform_host
   displayName: ''     # the human name
@@ -27,7 +31,7 @@ jobs:
     pool:
       name: ${{ parameters.vmPool }}
       vmImage: ${{ parameters.vmImage }}
-      ${{ if eq(parameters.vmPool, 'Azure Pipelines') }}:
+      ${{ if eq(variables['Hosted'], 'true') }}:
         demands: 
           - Agent.OS -equals Windows_NT
     dependsOn: ${{ parameters.dependsOn }}
